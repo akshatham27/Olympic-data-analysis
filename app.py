@@ -5,8 +5,20 @@ import plotly.express as px
 import matplotlib.pyplot as plt
 import seaborn as sns
 import plotly.figure_factory as ff
+import gdown
+import os
 
-df = pd.read_csv('athlete_events.csv.zip')
+# Download the large CSV file from Google Drive if not present
+file_id = '1hsumVyk-vLMKOYmHDh1nejZxeaouKlR4'  # Your actual file ID
+file_name = 'athlete_events.csv'
+if not os.path.exists(file_name):
+    try:
+        gdown.download(f'https://drive.google.com/uc?id={file_id}', file_name, quiet=False)
+    except Exception as e:
+        st.error(" Failed to download data file from Google Drive.\nPlease check the file link or permissions.")
+        st.stop()
+
+df = pd.read_csv('athlete_events.csv')
 region_df = pd.read_csv('noc_regions.csv')
 df = preprocessor.preprocess(df,region_df)
 
@@ -73,7 +85,6 @@ if user_menu == 'Overall Analysis':
     fig,ax = plt.subplots(figsize=(20,20))
     x = df.drop_duplicates(['Year','Sport','Event'])
     ax = sns.heatmap(x.pivot_table(index='Sport',columns='Year',values='Event',aggfunc='count').fillna(0).astype('int'),annot=True)
-
     st.pyplot(fig)
 
     events_over_time = helper.data_over_time(df, 'Event')
@@ -93,7 +104,6 @@ if user_menu == 'Overall Analysis':
 
     selected_sport = st.selectbox('Select a Sport',sport_list)
     x = helper.most_successful(df,selected_sport)
-
     st.table(x)
 
 if user_menu == 'Country-wise Analysis':
@@ -102,8 +112,6 @@ if user_menu == 'Country-wise Analysis':
     country_list = df['region'].dropna().unique().tolist()
     country_list.sort()
     selected_country = st.selectbox('Select a country', country_list)
-
-
 
     country_df = helper.yearwise_medal_tally(df,selected_country)
     fig = px.line(country_df, x="Year", y="Medal")
@@ -115,17 +123,7 @@ if user_menu == 'Country-wise Analysis':
     fig, ax = plt.subplots(figsize=(20, 20))
     ax = sns.heatmap(pt,annot=True)
     st.pyplot(fig)
+
     st.title("Top 10 Athletes of " + selected_country)
     top10_df = helper.most_successful_countrywise(df, selected_country)
     st.table(top10_df)
-
-
-
-
-
-
-
-
-
-
-
